@@ -1,125 +1,237 @@
-# Lane Detection Pipeline - Step-by-Step Implementation
+# Lane Detection Pipeline
 
-This pipeline implements lane detection in 7 separate steps, each saved as a different Python file.
+[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-## Overview
+A comprehensive lane detection system using classical computer vision techniques: **Hough Transform** and **spatial line fitting**. This pipeline implements a modular 7-step approach to detect road lanes from video frames.
 
-All steps process images from the `test/` folder and save outputs to separate folders.
+## 📋 Overview
 
-## Step Files
+This project demonstrates advanced image processing techniques without relying on deep learning. It combines:
+- Custom edge detection (Canny)
+- Hough Transform for line detection
+- Linear regression for lane fitting
+- Region of Interest (ROI) masking
 
-### Step 1: `step1_hsv_binary.py`
-- **Purpose**: Convert RGB to HSV and create initial binary image
-- **Input**: RGB images from `test/` folder
-- **Output**: 
-  - `output_step1_hsv_binary/` folder
-  - `*_hsv.jpg` - HSV color space images
-  - `*_binary_initial.jpg` - Binary images (all 1s/255)
+## 🏗️ Architecture
 
-### Step 2: `step2_filter_colors.py`
-- **Purpose**: Apply Gaussian filter and filter lane colors (white/yellow)
-- **Input**: HSV images and binary images from step1
-- **Output**:
-  - `output_step2_filter_colors/` folder
-  - `*_binary_filtered.jpg` - Binary image after color filtering
-  - `*_filtered_rgb.jpg` - RGB image with only lane colors
+The pipeline consists of 7 sequential processing steps:
 
-### Step 3: `step3_canny_edges.py`
-- **Purpose**: Apply custom Canny edge detection
-- **Input**: RGB images from `test/` and filtered binary images from step2
-- **Output**:
-  - `output_step3_canny/` folder
-  - `*_canny_edges.jpg` - Canny edges before filtering
-  - `*_canny_filtered.jpg` - Canny edges filtered by binary mask B
+| Step | Module | Purpose | Key Technique |
+|------|--------|---------|---------------|
+| 1 | `color_conversion.py` | RGB → HSV conversion | Color space transformation |
+| 2 | `color_filtering.py` | Extract white/yellow lanes | Gaussian blur + HSV thresholding |
+| 3 | `edge_detection.py` | Detect edges | Custom Canny implementation |
+| 4 | `roi_masking.py` | Define region of interest | Trapezoidal mask |
+| 5 | `line_detection.py` | Detect lines | Custom Hough Transform |
+| 6 | `line_filtering.py` | Separate left/right lanes | Slope-based filtering |
+| 7 | `final_output.py` | Fit and draw lanes | Linear regression |
 
-**Note**: Uses custom Canny implementation from assignment 2 (no built-in functions)
+## 🚀 Quick Start
 
-### Step 4: `step4_roi.py`
-- **Purpose**: Define Region of Interest (trapezoidal mask)
-- **Input**: Filtered Canny edges from step3
-- **Output**:
-  - `output_step4_roi/` folder
-  - `*_roi_mask.jpg` - ROI mask visualization
-  - `*_edges_roi.jpg` - Edges within ROI
+### Prerequisites
+- Python 3.7+
+- OpenCV
+- NumPy
 
-**Assumption**: Camera remains in constant place and lanes are flat
-
-### Step 5: `step5_hough.py`
-- **Purpose**: Apply custom Hough Transform to detect lines
-- **Input**: Edges within ROI from step4
-- **Output**:
-  - `output_step5_hough/` folder
-  - `*_hough_lines.jpg` - Visualization of detected lines
-  - `*_hough_lines.txt` - Line segments data (x1,y1,x2,y2 format)
-
-**Note**: Uses **custom Hough Transform implementation** (no built-in functions)
-- Converts edge points from image space to parameter space (rho, theta)
-- Finds peaks in accumulator to detect lines
-- Converts detected lines to line segments
-
-### Step 6: `step6_filter_lines.py`
-- **Purpose**: Filter lines by slope and separate into left/right lanes
-- **Input**: Line segments from step5
-- **Output**:
-  - `output_step6_filter_lines/` folder
-  - `*_filtered_lines.jpg` - Visualization (blue=left, red=right)
-
-**Filtering**:
-- Left Lane: negative slope (y decreases as x increases)
-- Right Lane: positive slope (y increases as x increases)
-- Filters out lines that are too horizontal (slope < 0.3) or too vertical (slope > 2.0)
-
-### Step 7: `step7_final.py`
-- **Purpose**: Apply linear regression and draw final results
-- **Input**: Original images, line segments from step5, ROI mask from step4
-- **Output**:
-  - `output_step7_final/` folder
-  - `*_final_result.jpg` - Final result with fitted lane lines
-
-**Note**: Uses **custom Linear Regression implementation** (no built-in functions)
-- Implements least squares method manually
-- Fits a single line through each group of line segments
-- Helps fill gaps in dashed lane lines
-
-## Running the Pipeline
-
-Run each step sequentially:
+### Installation
 
 ```bash
-python3 step1.py
-python3 step2.py
-python3 step3.py    # May take time due to custom Canny
-python3 step4.py
-python3 step5.py
-python3 step6.py
-python3 step7.py
+# Clone the repository
+git clone https://github.com/hoork02/lane-detection.git
+cd lane-detection
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-## Custom Implementations
+### Usage
 
-### Hough Transform (Step 5)
-- **No built-in functions used**
-- Implements standard Hough Transform:
-  1. Creates accumulator array in (rho, theta) parameter space
-  2. For each edge point, votes for all possible lines passing through it
-  3. Line equation: `rho = x*cos(theta) + y*sin(theta)`
-  4. Finds peaks in accumulator (votes >= threshold)
-  5. Converts detected lines to line segments
+```bash
+# Run the entire pipeline
+python run_pipeline.py
 
-### Linear Regression (Step 7)
-- **No built-in functions used**
-- Implements least squares method manually:
-  - Slope: `m = (n*Σxy - Σx*Σy) / (n*Σx² - (Σx)²)`
-  - Intercept: `b = (Σy - m*Σx) / n`
-- Fits line through all points from line segments in each group
+# Or run individual steps
+python -m src.color_conversion
+python -m src.color_filtering
+python -m src.edge_detection
+python -m src.roi_masking
+python -m src.line_detection
+python -m src.line_filtering
+python -m src.final_output
+```
 
-## Dependencies
+**Input:** Place test images in the `data/input/` folder
 
-- OpenCV (cv2) - for image I/O and basic operations
-- NumPy - for numerical operations
-- Custom modules from assignment 2:
-  - `masks.py` - Gaussian derivative filters
-  - `grad.py` - Gradient computation
-  - `non.py` - Non-maximum suppression
-  - `hyst.py` - Hysteresis thresholding
+**Output:** Results are saved to `data/output/` with subdirectories for each step
 
+## 📊 Pipeline Details
+
+### Step 1: Color Space Conversion
+- **Input:** RGB images
+- **Process:** Convert to HSV color space for better color segmentation
+- **Output:** HSV representations, binary initialization
+
+### Step 2: Color Filtering
+- **Input:** HSV images
+- **Process:** Apply Gaussian blur and threshold for white/yellow pixels
+- **Output:** Filtered binary images
+
+### Step 3: Edge Detection
+- **Input:** Grayscale images
+- **Process:** Custom Canny edge detection (no OpenCV built-in)
+  - Gaussian derivatives
+  - Gradient magnitude and direction
+  - Non-maximum suppression
+  - Hysteresis thresholding
+- **Output:** Edge maps
+
+### Step 4: ROI Masking
+- **Input:** Edge images
+- **Process:** Define trapezoidal region of interest
+- **Assumption:** Camera position and lane geometry remain constant
+- **Output:** Masked edge images
+
+### Step 5: Line Detection
+- **Input:** ROI edge images
+- **Process:** Custom Hough Transform (no OpenCV built-in)
+  - Accumulator voting in (ρ, θ) parameter space
+  - Peak detection for line candidates
+  - Conversion to line segments
+- **Output:** Detected line segments
+
+### Step 6: Line Filtering
+- **Input:** Detected line segments
+- **Process:** Filter by slope magnitude, separate left/right lanes
+  - Left lane: negative slope
+  - Right lane: positive slope
+  - Remove near-horizontal and near-vertical lines
+- **Output:** Classified lane segments
+
+### Step 7: Final Output
+- **Input:** Original images + classified lines
+- **Process:** Linear regression using least squares method
+  - Fits single line through each lane group
+  - Fills gaps in dashed lane markings
+- **Output:** Final image with drawn lane lines
+
+## 🔧 Configuration
+
+Key parameters can be adjusted in each module:
+
+```python
+# Color filtering thresholds (HSV)
+yellow_lower = np.array([18, 80, 80])
+yellow_upper = np.array([35, 255, 255])
+white_lower = np.array([0, 0, 200])
+white_upper = np.array([180, 40, 255])
+
+# Canny edge detection
+sigma = 1.4              # Gaussian kernel sigma
+Th = 40                  # High threshold
+Tl = 10                  # Low threshold
+
+# Hough Transform
+rho_res = 1              # Distance resolution (pixels)
+theta_res = np.pi/180   # Angular resolution (radians)
+threshold = 50           # Minimum votes for line detection
+
+# Line filtering
+min_slope = 0.3          # Minimum slope magnitude
+max_slope = 2.0          # Maximum slope magnitude
+```
+
+## 📁 Project Structure
+
+```
+lane-detection/
+├── src/
+│   ├── __init__.py
+│   ├── color_conversion.py      # Step 1
+│   ├── color_filtering.py       # Step 2
+│   ├── edge_detection.py        # Step 3
+│   ├── roi_masking.py           # Step 4
+│   ├── line_detection.py        # Step 5
+│   ├── line_filtering.py        # Step 6
+│   ├── final_output.py          # Step 7
+│   ├── filters.py               # Custom filter kernels
+│   ├── gradient.py              # Gradient computation
+│   ├── suppression.py           # Non-maximum suppression
+│   └── thresholding.py          # Hysteresis thresholding
+├── data/
+│   ├── input/                   # Place test images here
+│   └── output/                  # Results (auto-created)
+├── run_pipeline.py              # Main pipeline script
+├── requirements.txt             # Dependencies
+├── .gitignore                   # Git ignore rules
+└── README.md                    # This file
+```
+
+## 🎯 Key Features
+
+✅ **Pure Python Implementation**: No deep learning, fully interpretable algorithms
+
+✅ **Custom Implementations**: Canny edge detection and Hough Transform built from scratch
+
+✅ **Modular Design**: Each step is independent and can be reused
+
+✅ **Well-Documented**: Comprehensive docstrings and comments
+
+✅ **Configurable**: Easy to adjust parameters for different scenarios
+
+## 📈 Performance Notes
+
+- **Speed**: Step 3 (Canny) may take longer on large images due to custom implementation
+- **Accuracy**: Works best on clear lane markings (white/yellow)
+- **Robustness**: Sensitive to lighting conditions; test with various environments
+
+## 🧮 Mathematical Foundations
+
+### Hough Transform
+Line equation in parameter space:
+```
+ρ = x·cos(θ) + y·sin(θ)
+```
+Where:
+- `ρ`: Perpendicular distance from origin to line
+- `θ`: Angle of the perpendicular
+- `(x, y)`: Point on the line
+
+### Linear Regression
+Least squares fitting:
+```
+m = (n·Σxy - Σx·Σy) / (n·Σx² - (Σx)²)
+b = (Σy - m·Σx) / n
+```
+Where:
+- `m`: Slope
+- `b`: Y-intercept
+- `n`: Number of points
+
+## 📝 Dependencies
+
+- **opencv-python** (cv2) - Image I/O and basic operations
+- **numpy** - Numerical computing
+
+Optional:
+- **matplotlib** - Visualization and debugging
+
+## 🤝 Contributing
+
+Contributions are welcome! Areas for improvement:
+- Adaptive thresholding for varying lighting conditions
+- Curved lane detection
+- Real-time video processing
+- Performance optimization
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## 📧 Contact
+
+For questions or suggestions, please open an issue on GitHub.
+
+---
+
+**Note**: This project is designed for educational purposes to demonstrate classical computer vision techniques. For production lane detection systems, consider using state-of-the-art deep learning approaches.
