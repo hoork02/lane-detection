@@ -1,0 +1,8 @@
+# Lane Detection Pipeline Dependencies
+
+# Core dependencies
+opencv-python>=4.5.0
+numpy>=1.19.0
+
+# Optional visualization
+matplotlib>=3.3.0
